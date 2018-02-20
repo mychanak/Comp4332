@@ -21,7 +21,8 @@ def crawlData():
 #5.3.0 Print Course
 # For each distinct course, show “Course Code”, “Course Title”, “No. of Units/Credits”, “Matched Time Slot”
 # For the list of sections (including both lecture sections and non-lecture sections) of the course, show “Section”, “Date & Time”, “Quota”, “Enrol”, “Avail”, “Wait” and “Satisfied”
-
+# Condition 1 is for display "Matched Time Slot" in course, only needed for 5.3.2
+# Condition 2 is for display "Satisfied" in section, only needed for 5.3.2
 
 def printSection (section, condition2):
         print ("Section: ", section[0])

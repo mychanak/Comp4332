@@ -108,10 +108,10 @@ def courseSearch():
 
 # 5.4 Waiting List Size Prediction
 def prediction():
-    course_code = raw_input("Please input the Course Code: ")
-    lecture_no = input("Please input the Lecture Number (e.g. the input should be “1” denoting “L1”): ")
-    time_slot = input("Please input the Time Slot: ")
-    print ("Search course that match " + course_code + ", " + str(lecture_no) + " and " + str(time_slot))
+    cc = raw_input("Please input the Course Code: ")
+    ln = input("Please input the Lecture Number (e.g. the input should be “1” denoting “L1”): ")
+    ts = input("Please input the Time Slot: ")
+    print ("Training for course " + cc + ", " + str(ln) + " and " + str(ts))
     N1 = 10
     N2 = 20
     N3 = 30

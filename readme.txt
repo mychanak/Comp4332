@@ -11,7 +11,7 @@
 4. method of execution (e.g., “python main.py”)
         1. Download and extract the zip file
         2. Go to the directory of the folder (e.g "cd /Download/Comp4332")
-        3. execute the program (e.g. "python main.py")
+        3. execute the program (e.g. "python Main.py")
 5. known bugs of your system
         1. The Drop Collection feature does not perform operation, it always return “Collection dropping and empty collection creating        successful”
         2. The Data Crawling feature can only distinguish input by “default” and “non-default”, data crawling is not performed in the function.

@@ -1,7 +1,3 @@
-//first insertion
-//COMP4332 record from two timeslot:
-//2018-01-26T14:00:00Z: L1, T1
-//2018-02-01T11:00:00Z: L1
 db.course.insert({
     code: "COMP4332",
     ctitle: "Big Data Mining and Management",
@@ -46,8 +42,6 @@ db.course.insert({
 })
 
 
-//second insertion
-//RMBI4310 record at 2018-01-26T14:00:00
 db.course.insert({
     code: "RMBI4310",
     ctitle: "Advanced Data Mining for Risk Management and Business Intelligence",

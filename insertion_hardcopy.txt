@@ -1,3 +1,6 @@
+//The insertion of each course is done by a single script. The “course” collection will contain the course code, course title, description , etc to help filtering the courses by keyword that matches course title, description or remarks in requirement 5.3.1.  
+ListOfSection inside “course” is an array containing all the sections belongs to the course code and each of the section will have its section number, timeslot ,quota ,etc. 
+
 db.course.insert({
     code: "COMP4332",
     ctitle: "Big Data Mining and Management",
@@ -75,3 +78,4 @@ db.course.insert({
 })
 
 //db.course.drop()
+

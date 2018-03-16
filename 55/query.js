@@ -11,8 +11,6 @@ db.course.aggregate([
     { $sort: { code: 1 } }
 ])
 
-//To implement the above function, we will first split the the keyword string into several words (do in pthon). Then, we will check every keyword whether it matches the title , description or remarks of the course by using $match and regular expressions. At last, we output the result according to the project specification, such as corse title, credit , and its list of sections and sort them in ascending order.
-
 //5.3.2 Course Search by Waiting list size
 //f: 0.05, start_ts: 2018-01-26T14:00:00Z, end_ts: 2018-02-01T11:30:00Z
 
@@ -28,10 +26,6 @@ db.course.aggregate([
 	{$group: {_id:"$code",maxDate:{$max: "$listOfSections.timeSlot"}}},
 	{$out: "R1"}
 ])
-
-// The above function is used to get the latest time slot of each courses that within the range of start_ts and end_ts. The table output will be used in the next function to perform 5.3.2 Course Search by Waiting list size.
-
-
 
 db.course.aggregate([
 	//join the table with R1
@@ -51,9 +45,7 @@ db.course.aggregate([
 	
 	//output the information
 	{$project:{_id: 0, code:1, ctitle:1, credit:1, "listOfSections.section": 1, "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, match_ts:"$R2.maxDate" }},
-	{ $group: {_id: { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit" ,"match_ts":"$match_ts"}, "listOfSections":{"$addToSet": "$listOfSections"}}},
-	{ $sort: { _id: 1 } }
+	{ $sort: { code: 1 } }
 ])
+		
 db.R1.drop()
-
-The above function is first join the table created in the last function to get the latest timeslot of each course, then it will check whether the course timeslot matches the latest timeslot with compareResult: {$eq: ["$listOfSections.timeSlot", "$R2.maxDate"]} }}. After output the result and it in ascending order in section, we drop the temporary table created in the last fiction to release spaces. For the attribute “Satisfied” , we will use the number of enrol and wait to calculate inside python.

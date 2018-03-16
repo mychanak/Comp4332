@@ -45,7 +45,8 @@ db.course.aggregate([
 	
 	//output the information
 	{$project:{_id: 0, code:1, ctitle:1, credit:1, "listOfSections.section": 1, "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, match_ts:"$R2.maxDate" }},
-	{ $sort: { code: 1 } }
+	{ $group: {_id: { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit" ,"match_ts":"$match_ts"}, "listOfSections":{"$addToSet": "$listOfSections"}}},
+	{ $sort: { "_id.code": 1 } }
 ])
 		
 db.R1.drop()

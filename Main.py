@@ -5,6 +5,7 @@
 from pymongo import MongoClient
 from pprint import pprint
 from tabulate import tabulate
+import datetime
 
 def dropCollection():
     print ("Collection dropping and empty collection creating are successful")
@@ -24,9 +25,9 @@ def crawlData():
 # For each distinct course, show “Course Code”, “Course Title”, “No. of Units/Credits”, “Matched Time Slot”
 # For the list of sections (including both lecture sections and non-lecture sections) of the course, show “Section”, “Date & Time”, “Quota”, “Enrol”, “Avail”, “Wait” and “Satisfied”
 
-def printSection(sections, condition3):
+def printSection(sections, size):
 
-    if condition3 == "":
+    if size == "":
 
         table=[]
         for section in sections:
@@ -37,25 +38,38 @@ def printSection(sections, condition3):
         print("")
 
     else:
-        title_list = ["Section", "Date & Time", "Quota", "Enroll", "Avail", "Wait", "Satisfied"]
-        row_format = "{:>10} {:>15} {:>10} {:>10} {:>10} {:>10} {:>10} "
-        print (row_format.format(title_list[0], title_list[1], title_list[2], title_list[3], title_list[4], title_list[5], title_list[6]))
-        print("   ----------------------------------------------------------------------------------")
-        print  (row_format.format(section[0], section[1], section[2], section[3], section[4], section[5], section[6]))
+        table=[]
+        for section in sections:
+            wait = float(section["wait"])
+            enrol = float(section["enrol"])
+            size = float(size)
+            condition= wait >= (section["enrol"]*size)
+            if(condition):
+                temp=[section["section"], section["dateTime"], section["quota"], section["enrol"], section["avail"], section["wait"],"Yes"]
+                table.append(temp)
+            else:
+                temp=[section["section"], section["dateTime"], section["quota"], section["enrol"], section["avail"], section["wait"],"No"]
+                table.append(temp)
+
+        print (tabulate(table, headers={"Section":"", "Date & Time":"", "Quota":"","Enroll":"","Avail":"","Wait":"","Satisfied":""}))
+        print("")
+        
 
 
 # for
 def printCourse(course,condition3):
 
-    table= [course["code"],course["ctitle"],course["credit"]]
-    print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":""}))
-    print("")
 
     if condition3 =="":
+        table= [course["code"],course["ctitle"],course["credit"]]
+        print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":""}))
+        print("")
         print ('{:>42}'.format("Sections"))
     else:
+        table= [course["code"],course["ctitle"],course["credit"],course["match_ts"]]
+        print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":"","Matched Time slot":""}))
+        print("")
         print ('{:>44}'.format("Matched Time Slot "))
-        course[3].append("Yes")
     printSection(course["listOfSections"], condition3)
 
 
@@ -77,25 +91,28 @@ def searchByKeyword(db):
             query.append({'ctitle': {'$regex':reg }})
             query.append({'description': {'$regex':reg }})
             query.append({'listOfSections.remarks': {'$regex':reg }})
-            listOfCourse=listCourse = db.course.aggregate([{ "$match": { "$or": query } },\
-            {"$lookup":{ \
-                "localField": "code",\
-                "from": "R1",\
-                "foreignField": "_id",\
-                "as": "R3"\
-            }},\
-            {"$unwind": "$R3"},\
-            {"$unwind": "$listOfSections"},\
-            { "$project": { '_id': 0, 'code': 1, 'ctitle': 1, 'credit': 1, "listOfSections.section": 1, \
-            "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1,\
-             "listOfSections.avail": 1, "listOfSections.wait": 1 ,"compareResult": {"$eq": ["$listOfSections.timeSlot", "$R3.maxDate"]}} },\
-            {"$match": {"compareResult": True}},\
-            { "$group": {"_id": { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit"}, "listOfSections":{"$addToSet": "$listOfSections"}}},\
-            {"$project":{"code":"$_id.code","ctitle":"$_id.ctitle","credit":"$_id.credit", "listOfSections":"$listOfSections","_id":0}},\
-            { "$sort": { "code": 1 } }])
+
+        listOfCourse=listCourse = db.course.aggregate([{ "$match": { "$or": query } },\
+        {"$lookup":{ \
+        "localField": "code",\
+        "from": "R1",\
+        "foreignField": "_id",\
+        "as": "R3"\
+        }},\
+        {"$unwind": "$R3"},\
+        {"$unwind": "$listOfSections"},\
+        { "$project": { '_id': 0, 'code': 1, 'ctitle': 1, 'credit': 1, "listOfSections.section": 1, \
+        "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1,\
+        "listOfSections.avail": 1, "listOfSections.wait": 1 ,"compareResult": {"$eq": ["$listOfSections.timeSlot", "$R3.maxDate"]}} },\
+        {"$match": {"compareResult": True}},\
+        { "$group": {"_id": { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit"}, "listOfSections":{"$addToSet": "$listOfSections"}}},\
+        {"$project":{"code":"$_id.code","ctitle":"$_id.ctitle","credit":"$_id.credit", "listOfSections":"$listOfSections","_id":0}},\
+        { "$sort": { "code": 1 } }])
         
         for course in listOfCourse: 
             printCourse(course, "")
+
+        db.R1.drop()
 
         
 
@@ -105,15 +122,56 @@ def searchByKeyword(db):
 
 # 5.3.2 Course Search by Waiting List Size
 # only extract course from database which statisfy the match_ts
-def searchBySize():
-    size = input("Please input the Maximum Waiting List Size: ")
-    start_ts = input("Please input the Starting Time Slot: ")
-    end_ts = input("Please input the Ending Time Slot: ")
+def searchBySize(db):
+    
+    try:
+        size = input("Please input the Maximum Waiting List Size: ")
+        start_ts = input("Please input the Starting Time Slot: ")
+        end_ts = input("Please input the Ending Time Slot: ")
 
-    section = ["L1", "Tue 10:30", 40, 30, 10, 8]
-    course = ("COMP4332", "Big Data Mining", 3 ,section )
+        db.course.aggregate([ {"$unwind": "$listOfSections"},\
+            {"$group": {"_id":"$code","maxDate":{"$max": "$listOfSections.timeSlot"}}},\
+            {"$out": "R1"}\
+        ])
 
-    printCourse(course, size)
+        dateTime1 = datetime.datetime(2018,1,26,14,0,0)
+        dateTime2 = datetime.datetime(2018,2,1,11,30,0)
+
+
+        listOfCourse = db.course.aggregate([\
+        {"$match": {\
+            "$and": [{ "listOfSections.timeSlot": { "$gte": dateTime1 } }, \
+                { "listOfSections.timeSlot": { "$lte": dateTime2 } }\
+            ]}},\
+        {"$lookup":{\
+            "localField": "code",\
+            "from": "R1",\
+            "foreignField": "_id",\
+            "as": "R3"\
+        }},\
+        {"$unwind": "$R3"},\
+        {"$project":{"_id": 0, "code":1, "ctitle":1, "credit":1, "listOfSections.section": 1, "listOfSections.dateTime": 1,\
+         "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, "listOfSections.timeSlot": 1, "R3.maxDate":1}},\
+        {"$unwind": "$listOfSections"},\
+        {"$project":{"_id": 0, "code":1, "ctitle":1, "credit":1, "listOfSections.section": 1, "listOfSections.dateTime": 1, \
+        "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, "listOfSections.timeSlot": 1,
+         "R3.maxDate":1, "compareResult": {"$eq": ["$listOfSections.timeSlot", "$R3.maxDate"]} }},\
+        {"$match": {"compareResult": True}},\
+        {"$project":{"_id": 0, "code":1, "ctitle":1, "credit":1, "listOfSections.section": 1, "listOfSections.dateTime": 1,\
+         "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, "match_ts":"$R3.maxDate" }},\
+        { "$group": {"_id": { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit" ,"match_ts":"$match_ts"}, "listOfSections":{"$addToSet": "$listOfSections"}}},\
+        {"$project":{"code":"$_id.code","ctitle":"$_id.ctitle","credit":"$_id.credit","match_ts":"$_id.match_ts" ,"listOfSections":"$listOfSections","_id":0}},\
+        { "$sort": { "code": 1 } }\
+        ])
+
+
+        for course in listOfCourse: 
+            printCourse(course,size)
+
+    except pymongo.errors.ConnectionFailure as error: 
+        print("Document Querying Failed! Error Message: \"{}\"".format(error))
+
+    #printCourse(course, size)
 
 
 # 5.3 Course Search
@@ -137,7 +195,7 @@ def courseSearch(db):
         if (choice3 == "1"):
             searchByKeyword(db)
         elif (choice3 == "2"):
-            searchBySize()
+            searchBySize(db)
         elif (choice3 == "3"):
             print("")
             return

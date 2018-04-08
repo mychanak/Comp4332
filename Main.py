@@ -57,10 +57,10 @@ def printSection(sections, size):
 
 
 # for
-def printCourse(course,condition3):
+def printCourse(course,size):
 
 
-    if condition3 =="":
+    if size=="":
         table= [course["code"],course["ctitle"],course["credit"]]
         print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":""}))
         print("")
@@ -70,7 +70,7 @@ def printCourse(course,condition3):
         print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":"","Matched Time slot":""}))
         print("")
         print ('{:>44}'.format("Matched Time Slot "))
-    printSection(course["listOfSections"], condition3)
+        printSection(course["listOfSections"], size)
 
 
 # 5.3.1 Course Search by Keyword
@@ -126,16 +126,17 @@ def searchBySize(db):
     
     try:
         size = input("Please input the Maximum Waiting List Size: ")
-        start_ts = input("Please input the Starting Time Slot: ")
-        end_ts = input("Please input the Ending Time Slot: ")
+        start_ts = input("Please input the Starting Time Slot in YYYY-mm-dd HH:MM:SS Format: ")
+        end_ts = input("Please input the Ending Time Slot in YYYY-mm-dd HH:MM:SS Format: ")
 
+        dateTime1 = datetime.datetime.strptime(start_ts, "%Y-%m-%dT%H:%M:%S")
+        dateTime2 = datetime.datetime.strptime(end_ts, "%Y-%m-%dT%H:%M:%S")
+        
         db.course.aggregate([ {"$unwind": "$listOfSections"},\
             {"$group": {"_id":"$code","maxDate":{"$max": "$listOfSections.timeSlot"}}},\
             {"$out": "R1"}\
         ])
 
-        dateTime1 = datetime.datetime(2018,1,26,14,0,0)
-        dateTime2 = datetime.datetime(2018,2,1,11,30,0)
 
 
         listOfCourse = db.course.aggregate([\
@@ -167,6 +168,9 @@ def searchBySize(db):
 
         for course in listOfCourse: 
             printCourse(course,size)
+
+        db.R1.drop()
+
 
     except pymongo.errors.ConnectionFailure as error: 
         print("Document Querying Failed! Error Message: \"{}\"".format(error))

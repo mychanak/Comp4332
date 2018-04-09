@@ -8,7 +8,7 @@
 #
 import scrapy
 
-class Trial(scrapy.Spider):
+class Trail(scrapy.Spider):
 	name = "Trial"
 	start_urls = [ "http://comp4332.com/trial" ]
 	
@@ -33,6 +33,11 @@ class Trial(scrapy.Spider):
 		listOfLink = response.xpath("//a[@href]/@href").extract()
 		
 		# Step (b): To perform data crawling on the webpage of each of the links
-		#          where each link contains keyword "Table.html
+		#          where each link contains keyword "Table.html"
+		for link in listOfLink:
+			if ("Table.html" in link):
+				yield response.follow(link, callback=self.parse)
+
+
 		self.log("Saved File {} ".format(linkFilename))
 

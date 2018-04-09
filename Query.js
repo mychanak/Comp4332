@@ -1,15 +1,19 @@
-//5.3.1 Course Search by Keyword
-//Keyword: "Risk Mining"
-//Sorting in ascending order of "Sections" within a single course in Python
 
+//find the lastest time slot
+//used by 5.3.1 and 5.3.2
 db.course.aggregate([
-	//find the list of sections between start_ts and end_ts
 	{$unwind: "$listOfSections"},
 	
 	//find the lastest time slot
 	{$group: {_id:"$code",maxDate:{$max: "$listOfSections.timeSlot"}}},
 	{$out: "R1"}
 ])
+
+
+//5.3.1 Course Search by Keyword
+//Keyword: "Risk Mining"
+//Sorting in ascending order of "Sections" within a single course in Python
+
 
 
 db.course.aggregate([
@@ -65,6 +69,7 @@ db.course.aggregate([
 	//output the information
 	{$project:{_id: 0, code:1, ctitle:1, credit:1, "listOfSections.section": 1, "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, match_ts:"$R3.maxDate" }},
 	{ $group: {_id: { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit" ,"match_ts":"$match_ts"}, "listOfSections":{"$addToSet": "$listOfSections"}}},
+	{$project:{code:"$_id.code",ctitle:"$_id.ctitle",credit:"$_id.credit", match_ts:"$_id.ctitle" ,listOfSections:"$listOfSections",_id:0}},
 	{ $sort: { "_id.code": 1 } }
 ])
 		

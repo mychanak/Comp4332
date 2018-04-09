@@ -65,6 +65,7 @@ def printCourse(course,size):
         print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":""}))
         print("")
         print ('{:>42}'.format("Sections"))
+        printSection(course["listOfSections"], size)
     else:
         table= [course["code"],course["ctitle"],course["credit"],course["match_ts"]]
         print (tabulate([table], headers={'Course Code':"", 'Course Title': " ","No. of Credit":"","Matched Time slot":""}))

@@ -1,16 +1,17 @@
 # Comp4332
 1. Group Information
         Name: Chan Man Yee      Student ID: 20278380
-        Name: Ko Man Ching      Student ID: 20028216
+     
 2. file list
         insertion.js
 	query.js
+	Main.py
         readme.txt
 3. file description
         insertion.js is the script for inserting the data into database
 	query.js is the script for extracting information from database
+	Main.py is the programme that support 5.3.1 and 5.3.2 functions 
         readme.txt contains group information, file list, file description and known bugs of the system
 4. known bugs of your system
-        1.The Course Search By Keyword can only extract data with keyword “Risk Mining”, the result will always return COMP4332 and RMBI4310
-        2. The Course Search By Waiting List Size do not have the attribute “Satisfied”
-	3. The Course Search By Waiting List Size can only extract the data with start_ts = 2018-01-26T14:00:00Z and  end_ts = 2018-02-01T11:30:00Z, the result will always return COMP4332 and RMB4310.
+        1. The insertion and crawling in the python programme are not finished, therefore the extracted data is directly insert into the mongodb database before.
+	2. In insertion.js and query.js,the input for the query is hardcoded value, but in Main.py, it will execute the query with user input.

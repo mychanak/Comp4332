@@ -27,11 +27,14 @@ db.course.aggregate([
 	}},
 	{$unwind: "$R3"},
 	{$unwind: "$listOfSections"},
-    { $project: { _id: 0, code: 1, ctitle: 1, credit: 1, "listOfSections.section": 1, "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1 ,compareResult: {$eq: ["$listOfSections.timeSlot", "$R3.maxDate"]} } },
+    {$project: { _id: 0, code: 1, ctitle: 1, credit: 1, "listOfSections.section": 1, "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1 ,compareResult: {$eq: ["$listOfSections.timeSlot", "$R3.maxDate"]} } },
     {$match: {compareResult: true}},
-    { $group: {_id: { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit"}, "listOfSections":{"$addToSet": "$listOfSections"}}},
+    {$group: {_id: { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit"}, "listOfSections":{"$addToSet": "$listOfSections"}}},
+    {$unwind:"$listOfSections"},
+    {$sort:{"listOfSections.section":1}},
+    { $group: {_id: { "code": "$_id.code","ctitle": "$_id.ctitle" ,"credit":"$_id.credit"}, "listOfSections":{"$push": "$listOfSections"}}},
     {$project:{code:"$_id.code",ctitle:"$_id.ctitle",credit:"$_id.credit", listOfSections:"$listOfSections",_id:0}},
-    { $sort: { code: 1 } }
+    { $sort: { code: 1} }
 ])
 
 //5.3.2 Course Search by Waiting list size
@@ -69,7 +72,10 @@ db.course.aggregate([
 	//output the information
 	{$project:{_id: 0, code:1, ctitle:1, credit:1, "listOfSections.section": 1, "listOfSections.dateTime": 1, "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, match_ts:"$R3.maxDate" }},
 	{ $group: {_id: { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit" ,"match_ts":"$match_ts"}, "listOfSections":{"$addToSet": "$listOfSections"}}},
-	{$project:{code:"$_id.code",ctitle:"$_id.ctitle",credit:"$_id.credit", match_ts:"$_id.ctitle" ,listOfSections:"$listOfSections",_id:0}},
+	{$unwind:"$listOfSections"},
+    {$sort:{"listOfSections.section":1}},
+    { $group: {_id: { "code": "$_id.code","ctitle": "$_id.ctitle" ,"credit":"$_id.credit", "match_ts":"$_id.match_ts"}, "listOfSections":{"$push": "$listOfSections"}}},
+	{$project:{code:"$_id.code",ctitle:"$_id.ctitle",credit:"$_id.credit", match_ts:"$_id.match_ts" ,listOfSections:"$listOfSections",_id:0}},
 	{ $sort: { "_id.code": 1 } }
 ])
 		

@@ -6,19 +6,73 @@ from pymongo import MongoClient
 from pprint import pprint
 from tabulate import tabulate
 import datetime
+import subprocess
+import json 
 
 def dropCollection():
     print ("Collection dropping and empty collection creating are successful")
 
 
 # 5.2 Data Crawling
-def crawlData():
-    data = raw_input("Please input the URL/Keywords: ")
-    if (data == "default"):
-        choice = "keyword"
-    else:
-        choice = "url"
-    print ("Data Crawling is successful and all data are inserted into the database")
+def crawlData(db):
+
+    try:
+        data = input("Please input the URL/Keywords: ")
+        if (data == "default"):
+            strCommand = "scrapy crawl Realistic"
+            subprocess.run(strCommand, shell=True)  
+
+        else:
+            url=""
+            with open("testCrawl/spiders/Spider.py","r") as f:
+                url=f.read()
+                #print(url)
+                f.close()
+            url = url.replace("http://comp4332.com/trial",data)
+            url=url.replace("Trail","Temp")
+            with open("testCrawl/spiders/Temp.py","w") as f:
+                f.write(url)
+                f.close()
+            strCommand = "scrapy crawl Temp"
+            subprocess.run(strCommand, shell=True)  
+
+
+        db.course.drop()
+        fileopened  = open ("result.txt","r")
+        dic = fileopened.readline()
+        dic = json.loads(dic)
+        for key in dic:
+
+            query=[]
+            for section in dic[key]["listOfSection"]:
+                for sub in dic[key]["listOfSection"][section]:
+                    time = datetime.datetime.strptime(dic[key]["listOfSection"][section][sub]["timeSlot"] , "%Y-%m-%dT%H:%M:%S")
+                    query.append({"section": dic[key]["listOfSection"][section][sub]["section"],\
+                    'dateTime': dic[key]["listOfSection"][section][sub]["dateTime"] ,\
+                    'room': dic[key]["listOfSection"][section][sub]["room"],\
+                    'instructor': dic[key]["listOfSection"][section][sub]["instructor"],\
+                    'quota': dic[key]["listOfSection"][section][sub]["quota"],\
+                    'enrol': dic[key]["listOfSection"][section][sub]["enrol"],\
+                    'avail': dic[key]["listOfSection"][section][sub]["avail"],\
+                    'wait': dic[key]["listOfSection"][section][sub]["wait"],\
+                    'timeSlot': time ,\
+                    'remarks': dic[key]["listOfSection"][section][sub]["remarks"] })
+
+            db.course.insert({\
+                "code": dic[key]["code"],\
+                "ctitle": dic[key]["ctitle"],\
+                "credit": dic[key]["credit"],\
+                "prerequisite": dic[key]["prerequisites"],\
+                "colist": dic[key]["colist"],\
+                "exclusion": dic[key]["exclusion"],\
+                "description": dic[key]["description"],\
+                "listOfSections": query\
+            })
+
+            
+        print ("Data Crawling is successful and all data are inserted into the database")
+    except pymongo.errors.ConnectionFailure as error: 
+            print("Document Querying Failed! Error Message: \"{}\"".format(error))
 
 
 # 5.3.0 Print Course
@@ -28,11 +82,16 @@ def crawlData():
 def printSection(sections, size):
 
     if size == "":
-
         table=[]
         for section in sections:
-            temp=[section["section"], section["dateTime"], section["quota"], section["enrol"], section["avail"], section["wait"]]
+            dateTime=""
+            for i in section["dateTime"]:
+                dateTime = dateTime+str(i) +"\n"
+            temp=[section["section"], dateTime, section["quota"], section["enrol"], section["avail"], section["wait"]]
             table.append(temp)
+            #pprint(sections[section]["section"])
+            #for each in section["dateTime"]:
+                #print(each)
 
         print (tabulate(table, headers={"Section":"", "Date & Time":"", "Quota":"","Enroll":"","Avail":"","Wait":""}))
         print("")
@@ -43,12 +102,15 @@ def printSection(sections, size):
             wait = float(section["wait"])
             enrol = float(section["enrol"])
             size = float(size)
-            condition= wait >= (section["enrol"]*size)
+            dateTime=""
+            for i in section["dateTime"]:
+                dateTime = dateTime+str(i) +"\n"
+            condition= wait >= (enrol*size)
             if(condition):
-                temp=[section["section"], section["dateTime"], section["quota"], section["enrol"], section["avail"], section["wait"],"Yes"]
+                temp=[section["section"], dateTime, section["quota"], section["enrol"], section["avail"], section["wait"],"Yes"]
                 table.append(temp)
             else:
-                temp=[section["section"], section["dateTime"], section["quota"], section["enrol"], section["avail"], section["wait"],"No"]
+                temp=[section["section"], dateTime, section["quota"], section["enrol"], section["avail"], section["wait"],"No"]
                 table.append(temp)
 
         print (tabulate(table, headers={"Section":"", "Date & Time":"", "Quota":"","Enroll":"","Avail":"","Wait":"","Satisfied":""}))
@@ -93,7 +155,7 @@ def searchByKeyword(db):
             query.append({'description': {'$regex':reg }})
             query.append({'listOfSections.remarks': {'$regex':reg }})
 
-        listOfCourse=listCourse = db.course.aggregate([{ "$match": { "$or": query } },\
+        listOfCourse = db.course.aggregate([{ "$match": { "$or": query } },\
         {"$lookup":{ \
         "localField": "code",\
         "from": "R1",\
@@ -107,6 +169,9 @@ def searchByKeyword(db):
         "listOfSections.avail": 1, "listOfSections.wait": 1 ,"compareResult": {"$eq": ["$listOfSections.timeSlot", "$R3.maxDate"]}} },\
         {"$match": {"compareResult": True}},\
         { "$group": {"_id": { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit"}, "listOfSections":{"$addToSet": "$listOfSections"}}},\
+        {"$unwind":"$listOfSections"},\
+        {"$sort":{"listOfSections.section":1}},\
+        {"$group": {"_id": {  "code": "$_id.code","ctitle": "$_id.ctitle" ,"credit":"$_id.credit"}, "listOfSections":{"$push": "$listOfSections"}}},\
         {"$project":{"code":"$_id.code","ctitle":"$_id.ctitle","credit":"$_id.credit", "listOfSections":"$listOfSections","_id":0}},\
         { "$sort": { "code": 1 } }])
         
@@ -127,8 +192,8 @@ def searchBySize(db):
     
     try:
         size = input("Please input the Maximum Waiting List Size: ")
-        start_ts = input("Please input the Starting Time Slot in YYYY-mm-dd HH:MM:SS Format: ")
-        end_ts = input("Please input the Ending Time Slot in YYYY-mm-dd HH:MM:SS Format: ")
+        start_ts = input("Please input the Starting Time Slot in YYYY-mm-ddTHH:MM:SS Format: ")
+        end_ts = input("Please input the Ending Time Slot in YYYY-mm-ddTHH:MM:SS Format: ")
 
         dateTime1 = datetime.datetime.strptime(start_ts, "%Y-%m-%dT%H:%M:%S")
         dateTime2 = datetime.datetime.strptime(end_ts, "%Y-%m-%dT%H:%M:%S")
@@ -162,6 +227,9 @@ def searchBySize(db):
         {"$project":{"_id": 0, "code":1, "ctitle":1, "credit":1, "listOfSections.section": 1, "listOfSections.dateTime": 1,\
          "listOfSections.quota": 1, "listOfSections.enrol": 1, "listOfSections.avail": 1, "listOfSections.wait": 1, "match_ts":"$R3.maxDate" }},\
         { "$group": {"_id": { "code": "$code","ctitle": "$ctitle" ,"credit":"$credit" ,"match_ts":"$match_ts"}, "listOfSections":{"$addToSet": "$listOfSections"}}},\
+        {"$unwind":"$listOfSections"},\
+        {"$sort":{"listOfSections.section":1}},\
+        {"$group": {"_id": {  "code": "$_id.code","ctitle": "$_id.ctitle" ,"credit":"$_id.credit","match_ts":"$_id.match_ts"}, "listOfSections":{"$push": "$listOfSections"}}},\
         {"$project":{"code":"$_id.code","ctitle":"$_id.ctitle","credit":"$_id.credit","match_ts":"$_id.match_ts" ,"listOfSections":"$listOfSections","_id":0}},\
         { "$sort": { "code": 1 } }\
         ])
@@ -261,7 +329,7 @@ def main():
             if (choice == "1"):
                 dropCollection()
             elif (choice == "2"):
-                crawlData()
+                crawlData(db)
             elif (choice == "3"):
                 courseSearch(db)
             elif (choice == "4"):

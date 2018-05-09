@@ -2,24 +2,23 @@
 1. Group Information
         Name: Chan Man Yee      Student ID: 20278380    
 2. file list
-        insertion.js
-	query.js
 	Main.py
-	setting.py
 	testCrawl
-	Python-system.py
-	Trail.txt
-	result.txt
+	result
+	timeSeries
+	M1
+	M2
+	M3
+	M4
+	M5
         readme.txt
 3. file description
-        insertion.js is the script for inserting the data into database
-	query.js is the script for extracting information from database
-	Main.py is the programme that support crawling and insert into database and 5.3.1 and 5.3.2 functions 
-	setting.py, Python-system.py are files supporting crawling
-	Trail.txt,Realistic.txt are the copy of result from Trail and Realistic website 
-	result.txt is result of realistic website
-	testCrawl is the folder supporting crawling and hold spider.py
-        readme.txt contains group information, file list, file description and known bugs of the system
+	Main.py is the main programme for execution 
+	M1,M2,M3,M4,M5 are the folders that store the 5 models
+	testCrawl is the folder that support crawling and realistic spider is store in testCrawl/spider
+	timeSeries is the folder that stores the time series table for training data
+	result is the folder store the information crawling from the website and currently storing the realistic website data	
+	readme.txt contains group information, file list, file description and known bugs of the system
 4. method of execution 
 	1. Unzip the file 
 	2. Go to the file directory (e.g. cd Download/55)

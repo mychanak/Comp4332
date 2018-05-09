@@ -1,0 +1,11 @@
+2018-05-09 04:32:09 [scrapy.core.engine] ERROR: Error while obtaining start requests
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.6/site-packages/scrapy/core/engine.py", line 127, in _next_request
+    request = next(slot.start_requests)
+  File "/usr/local/lib/python3.6/site-packages/scrapy/spiders/__init__.py", line 83, in start_requests
+    yield Request(url, dont_filter=True)
+  File "/usr/local/lib/python3.6/site-packages/scrapy/http/request/__init__.py", line 25, in __init__
+    self._set_url(url)
+  File "/usr/local/lib/python3.6/site-packages/scrapy/http/request/__init__.py", line 62, in _set_url
+    raise ValueError('Missing scheme in request url: %s' % self._url)
+ValueError: Missing scheme in request url: deafult
